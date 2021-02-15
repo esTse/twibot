@@ -23,6 +23,8 @@ class TwitterBot(StreamListener):
         # Twitter targets to scrape
         self.targets = os.getenv("TARGETS")
         self.keywords = keywords
+        #Lo necesito para el fetch del user id
+        self.api = tweepy.API(self.auth)
 
     def telegram_bot_sendtext(self, bot_token, bot_chatID, bot_message):
         send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&text=' + bot_message
@@ -32,18 +34,24 @@ class TwitterBot(StreamListener):
         try:
             # process stream data here
             tweet = json.loads(data)
-            print(tweet)
+            screen_name = tweet['user']['screen_name']
+            user = self.api.get_user(screen_name)
             try:
                text = tweet['extended_tweet']['full_text']
                url = tweet['entities']['urls'][0]['url']
             except:
-               text = tweet['text']
-               url = "https://twitter.com/" + tweet['user']['screen_name'] + "/status/" + tweet['id_str']
+               text = tweet['text'].lower()
+               url = "https://twitter.com/" + screen_name + "/status/" + tweet['id_str']
 
-            for i in self.keywords:
-                if i in text.lower():
-                   self.telegram_bot_sendtext(self.telegram_token, self.telgram_room, url)
-
+            enviar = False
+            if "media" in tweet['entities'] and (tweet['in_reply_to_user_id'] != user):
+                enviar = True
+            else:
+                for i in self.keywords:
+                    if (i.lower() in text) and (tweet['in_reply_to_user_id'] != user):
+                       enviar = True
+            if enviar:
+               self.telegram_bot_sendtext(self.telegram_token, self.telgram_room, url)
         except KeyError:
                print("Tweet deleted or API attribute not found.")
 
@@ -55,3 +63,4 @@ if __name__ == "__main__":
     bot = TwitterBot(keywords)
     twitterStream = Stream(bot.auth, bot, tweet_mode= 'extended')
     twitterStream.filter(follow=bot.targets.split(";"))
+#and (tweet['in_reply_to_user_id'] != user
