@@ -36,6 +36,7 @@ class TwitterBot(StreamListener):
             tweet = json.loads(data)
             screen_name = tweet['user']['screen_name']
             user = self.api.get_user(screen_name)
+
             try:
                text = tweet['extended_tweet']['full_text']
                url = tweet['entities']['urls'][0]['url']
@@ -44,12 +45,14 @@ class TwitterBot(StreamListener):
                url = "https://twitter.com/" + screen_name + "/status/" + tweet['id_str']
 
             enviar = False
-            if "media" in tweet['entities'] and (tweet['in_reply_to_user_id'] != user):
-                enviar = True
-            else:
-                for i in self.keywords:
-                    if (i.lower() in text) and (tweet['in_reply_to_user_id'] != user):
-                       enviar = True
+
+            if user.id_str in self.targets:
+                if "media" in tweet['entities']:
+                    enviar = True
+                else:
+                    for i in self.keywords:
+                        if i.lower() in text:
+                           enviar = True
             if enviar:
                self.telegram_bot_sendtext(self.telegram_token, self.telgram_room, url)
         except KeyError:
@@ -63,4 +66,3 @@ if __name__ == "__main__":
     bot = TwitterBot(keywords)
     twitterStream = Stream(bot.auth, bot, tweet_mode= 'extended')
     twitterStream.filter(follow=bot.targets.split(";"))
-#and (tweet['in_reply_to_user_id'] != user
