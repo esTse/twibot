@@ -62,7 +62,7 @@ class TwitterBot(StreamListener):
          print(status)
 
 if __name__ == "__main__":
-    keywords = ["doge", "xrp"]
+    keywords = ["keyword1", "keyword2"]
     bot = TwitterBot(keywords)
     twitterStream = Stream(bot.auth, bot, tweet_mode= 'extended')
     twitterStream.filter(follow=bot.targets.split(";"))
